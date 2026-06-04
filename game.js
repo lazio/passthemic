@@ -49,6 +49,9 @@
   const $ = (sel) => document.querySelector(sel);
   const el = {};
   let setupColors = []; // per-player colors chosen on the setup screen (by index)
+  let savedNames = [];  // restored player names (fallback when rebuilding rows)
+
+  const SETTINGS_KEY = "passthemic.settings.v1";
   function cacheDom() {
     el.setupScreen = $("#setup-screen");
     el.gameScreen = $("#game-screen");
@@ -174,6 +177,7 @@
       el.wordsetSelect.appendChild(opt);
     });
 
+    applySavedSettings(); // restore last-used config before building rows
     renderNameInputs();
 
     // Steppers
@@ -188,19 +192,57 @@
 
     // Difficulty segmented control
     el.difficultyGroup.querySelectorAll(".seg").forEach((seg) => {
-      seg.addEventListener("click", () => {
-        el.difficultyGroup.querySelectorAll(".seg").forEach((s) => s.classList.remove("active"));
-        seg.classList.add("active");
-      });
+      seg.addEventListener("click", () => setActiveDifficulty(seg.dataset.value));
     });
 
     // Title toggle
-    el.titleToggle.addEventListener("click", () => {
-      const on = el.titleToggle.classList.toggle("on");
-      el.titleToggle.setAttribute("aria-checked", String(on));
-    });
+    el.titleToggle.addEventListener("click", () => setTitleToggle(!el.titleToggle.classList.contains("on")));
 
     el.form.addEventListener("submit", (e) => { e.preventDefault(); startGame(); });
+  }
+
+  function setActiveDifficulty(value) {
+    el.difficultyGroup.querySelectorAll(".seg").forEach((s) => {
+      s.classList.toggle("active", s.dataset.value === value);
+    });
+  }
+
+  function setTitleToggle(on) {
+    el.titleToggle.classList.toggle("on", on);
+    el.titleToggle.setAttribute("aria-checked", String(on));
+  }
+
+  /* ----------------------- Settings persistence ------------------------ */
+  function loadSettings() {
+    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || null; }
+    catch (e) { return null; }
+  }
+
+  function saveSettings() {
+    try {
+      const data = {
+        timer: el.timerInput.value,
+        players: parseInt(el.playersCount.value, 10) || 2,
+        difficulty: (el.difficultyGroup.querySelector(".seg.active") || {}).dataset?.value || "medium",
+        suggestTitle: el.titleToggle.classList.contains("on"),
+        wordSet: el.wordsetSelect.value,
+        names: Array.from(el.playerNames.querySelectorAll("input")).map((i) => i.value.trim()),
+        colors: setupColors.slice(),
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(data));
+    } catch (e) { /* storage unavailable — ignore */ }
+  }
+
+  function applySavedSettings() {
+    const s = loadSettings();
+    if (!s) return;
+    if (s.timer) el.timerInput.value = formatTime(parseTimer(s.timer));
+    if (s.players) el.playersCount.value = String(clamp(s.players, MIN_PLAYERS, MAX_PLAYERS));
+    if (s.difficulty) setActiveDifficulty(s.difficulty);
+    if (typeof s.suggestTitle === "boolean") setTitleToggle(s.suggestTitle);
+    if (s.wordSet && PROMPT_SETS[s.wordSet]) el.wordsetSelect.value = s.wordSet;
+    if (Array.isArray(s.colors)) setupColors = s.colors.slice();
+    if (Array.isArray(s.names)) savedNames = s.names.slice();
   }
 
   function onStep(which, delta) {
@@ -258,7 +300,7 @@
       const input = document.createElement("input");
       input.type = "text";
       input.maxLength = 20;
-      input.value = existing[i] || "Player " + (i + 1);
+      input.value = existing[i] || savedNames[i] || "Player " + (i + 1);
       input.placeholder = "Player " + (i + 1);
 
       row.appendChild(dot);
@@ -284,6 +326,7 @@
     };
     state.muted = false;
     updateMuteButton();
+    saveSettings(); // remember this configuration for next time
 
     buildDeck();
     ensureAudio(); // first user gesture — unlock audio
@@ -342,7 +385,7 @@
 
     el.revealTitle.textContent = state.title;
     el.revealTitle.style.display = state.title ? "block" : "none";
-    el.revealPrompt.textContent = state.prompt.text;
+    el.revealPrompt.textContent = state.prompt;
     el.revealCue.textContent = "";
     el.reveal.classList.remove("hidden");
 
@@ -366,7 +409,7 @@
     el.promptReminder.classList.remove("hidden");
     el.timerDisplay.classList.remove("hidden");
     el.timerDisplay.classList.remove("low");
-    el.promptReminder.textContent = state.prompt.text;
+    el.promptReminder.textContent = state.prompt;
 
     state.roundDuration = state.config.timer;
     state.elapsed = 0;
