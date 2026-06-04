@@ -16,10 +16,10 @@
   // the mic "at any moment" regardless of how long the round is.
   const TURN_REF_SECONDS = 60; // scaled ranges are tuned to a 1-minute round
   const DIFFICULTY = {
-    random: { turn: [4, 40], scale: false }, // wildly unpredictable — mic can pass any moment
-    fast:   { turn: [8, 10], scale: false }, // very short, high-pressure turns
-    medium: { turn: [15, 35], scale: true }, // moderate, varying — relative to game length
-    slow:   { turn: [40, 45], scale: true }, // long, comfortable stretches — relative to length
+    random: { turn: [3, 24], scale: false }, // wildly unpredictable — mic can pass any moment
+    fast:   { turn: [5, 7], scale: false },  // very short, high-pressure turns
+    medium: { turn: [8, 16], scale: true },  // moderate, varying — relative to game length
+    slow:   { turn: [18, 26], scale: true }, // longer, comfortable stretches — relative to length
   };
   const MIN_PLAYERS = 1, MAX_PLAYERS = 6;
   const MIN_TIMER = 15, MAX_TIMER = 900; // seconds
@@ -48,6 +48,7 @@
   /* ----------------------------- DOM refs ------------------------------ */
   const $ = (sel) => document.querySelector(sel);
   const el = {};
+  let setupColors = []; // per-player colors chosen on the setup screen (by index)
   function cacheDom() {
     el.setupScreen = $("#setup-screen");
     el.gameScreen = $("#game-screen");
@@ -105,6 +106,26 @@
   }
 
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // Pick black or white "ink" for readable text on a given background color,
+  // using WCAG relative luminance so it works for any palette entry.
+  function contrastInk(hex) {
+    const c = hex.replace("#", "");
+    const ch = (i) => parseInt(c.substr(i, 2), 16) / 255;
+    const lin = (v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    const L = 0.2126 * lin(ch(0)) + 0.7152 * lin(ch(2)) + 0.0722 * lin(ch(4));
+    return L > 0.45 ? "#14151b" : "#ffffff";
+  }
+
+  // The game screen takes on the active speaker's color; --ink keeps text readable.
+  function applyPlayerTheme(player) {
+    el.gameScreen.style.backgroundColor = player.color;
+    el.gameScreen.style.setProperty("--ink", contrastInk(player.color));
+  }
+  function clearPlayerTheme() {
+    el.gameScreen.style.backgroundColor = ""; // revert to the default dark bg
+    el.gameScreen.style.removeProperty("--ink");
+  }
 
   function generateTitle() {
     return "The " + pick(TITLE_PARTS.adjectives) + " " + pick(TITLE_PARTS.nouns) + " Podcast";
@@ -193,22 +214,53 @@
     }
   }
 
+  function firstUnusedColor(used) {
+    return PLAYER_COLORS.find((c) => !used.includes(c)) || PLAYER_COLORS[used.length % PLAYER_COLORS.length];
+  }
+
+  // Keep one distinct color per player; preserve existing picks, fill new slots.
+  function ensureColors(count) {
+    setupColors = setupColors.slice(0, count);
+    for (let i = setupColors.length; i < count; i++) setupColors[i] = firstUnusedColor(setupColors);
+  }
+
+  // A random color for player i — avoids the colors other players hold (and the
+  // current one when possible) so players stay visually distinct.
+  function randomColorFor(i) {
+    const others = setupColors.filter((_, j) => j !== i);
+    let pool = PLAYER_COLORS.filter((c) => !others.includes(c) && c !== setupColors[i]);
+    if (pool.length === 0) pool = PLAYER_COLORS.filter((c) => !others.includes(c));
+    if (pool.length === 0) pool = PLAYER_COLORS.slice();
+    return pick(pool);
+  }
+
   function renderNameInputs() {
     const count = clamp(parseInt(el.playersCount.value, 10) || 2, MIN_PLAYERS, MAX_PLAYERS);
     const existing = Array.from(el.playerNames.querySelectorAll("input")).map((i) => i.value);
+    ensureColors(count);
     el.playerNames.innerHTML = "";
+
     for (let i = 0; i < count; i++) {
-      const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
       const row = document.createElement("div");
       row.className = "name-row";
-      const dot = document.createElement("span");
+
+      // Clickable color dot — click to roll a new random color for this player.
+      const dot = document.createElement("button");
+      dot.type = "button";
       dot.className = "color-dot";
-      dot.style.background = color;
+      dot.style.background = setupColors[i];
+      dot.title = "Click for a random color";
+      dot.addEventListener("click", () => {
+        setupColors[i] = randomColorFor(i);
+        dot.style.background = setupColors[i];
+      });
+
       const input = document.createElement("input");
       input.type = "text";
       input.maxLength = 20;
       input.value = existing[i] || "Player " + (i + 1);
       input.placeholder = "Player " + (i + 1);
+
       row.appendChild(dot);
       row.appendChild(input);
       el.playerNames.appendChild(row);
@@ -220,7 +272,7 @@
     const diffKey = el.difficultyGroup.querySelector(".seg.active").dataset.value;
     const players = Array.from(el.playerNames.querySelectorAll("input")).map((input, i) => ({
       name: (input.value.trim() || "Player " + (i + 1)).toUpperCase(),
-      color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+      color: setupColors[i] || PLAYER_COLORS[i % PLAYER_COLORS.length],
     }));
 
     state.config = {
@@ -281,6 +333,7 @@
 
   function showReveal() {
     state.phase = PHASE.REVEAL;
+    clearPlayerTheme(); // reveal shows on the neutral dark background
     // Hide gameplay corners + stage
     el.stage.classList.add("hidden");
     el.roundEnd.classList.add("hidden");
@@ -345,7 +398,7 @@
   function renderActiveName(isSwap) {
     const player = state.config.players[state.activeIndex];
     el.activeName.textContent = player.name;
-    el.activeName.style.color = player.color;
+    applyPlayerTheme(player); // background + readable ink follow the active speaker
     // Re-trigger entry animation
     el.activeName.classList.remove("swap");
     void el.activeName.offsetWidth;
@@ -399,6 +452,7 @@
     stopLoop();
     state.phase = PHASE.ROUND_END;
     sound.end();
+    clearPlayerTheme(); // reset icon shows on the neutral dark background
     el.stage.classList.add("hidden");
     el.promptReminder.classList.add("hidden");
     el.timerDisplay.classList.add("hidden");
@@ -435,6 +489,7 @@
   function endGame() {
     clearRevealTimers();
     stopLoop();
+    clearPlayerTheme();
     state.phase = PHASE.SETUP;
     el.gameScreen.classList.remove("active");
     el.setupScreen.classList.add("active");

@@ -165,6 +165,7 @@ select:focus { outline: none; border-color: var(--accent); }
   gap: 10px;
 }
 .name-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -174,10 +175,16 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 6px 12px;
 }
 .color-dot {
-  width: 18px; height: 18px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.15s;
 }
+.color-dot:hover { transform: scale(1.12); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12); }
+.color-dot:active { transform: scale(0.96); }
 .name-row input {
   flex: 1;
   background: transparent;
@@ -206,7 +213,10 @@ select:focus { outline: none; border-color: var(--accent); }
 .start-btn:active { transform: scale(0.99); }
 
 /* ---------------- Game ---------------- */
-#game-screen { background: var(--bg); }
+#game-screen {
+  background: var(--bg);
+  transition: background-color 0.45s ease; /* smooth fade as the mic passes */
+}
 .hidden { display: none !important; }
 
 .reveal {
@@ -251,6 +261,7 @@ select:focus { outline: none; border-color: var(--accent); }
   letter-spacing: -0.03em;
   text-align: center;
   padding: 0 4vw;
+  color: var(--ink, #fff); /* --ink is set to a readable contrast vs the player bg */
 }
 .active-name.swap { animation: nameIn 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
 
@@ -272,7 +283,8 @@ select:focus { outline: none; border-color: var(--accent); }
   max-width: 40vw;
   font-size: clamp(13px, 1.6vw, 20px);
   font-weight: 600;
-  color: var(--muted);
+  color: var(--ink, var(--muted));
+  opacity: 0.8;
 }
 .timer-display {
   position: fixed;
@@ -280,9 +292,9 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: clamp(22px, 3vw, 40px);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: var(--text);
+  color: var(--ink, var(--text));
 }
-.timer-display.low { color: #ff5a5a; }
+.timer-display.low { color: #ff3b3b; } /* two-class rule still wins over var(--ink) */
 
 .control-bar {
   position: fixed;
