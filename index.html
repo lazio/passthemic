@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pass the Mic</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ============================ SETUP SCREEN ============================ -->
+  <section id="setup-screen" class="screen active">
+    <div class="setup-card">
+      <h1 class="setup-title">Pass the Mic</h1>
+      <p class="setup-subtitle">A spontaneous speaking drill. Take turns, stay talking.</p>
+
+      <form id="setup-form" autocomplete="off">
+        <div class="field-grid">
+          <!-- Timer length -->
+          <div class="field">
+            <label for="timer-input">Timer length</label>
+            <div class="stepper" data-stepper="timer">
+              <button type="button" class="step-btn" data-step="-15" aria-label="Less time">–</button>
+              <input id="timer-input" type="text" inputmode="numeric" value="1:00" />
+              <button type="button" class="step-btn" data-step="15" aria-label="More time">+</button>
+            </div>
+          </div>
+
+          <!-- Players -->
+          <div class="field">
+            <label for="players-count">Players</label>
+            <div class="stepper" data-stepper="players">
+              <button type="button" class="step-btn" data-step="-1" aria-label="Fewer players">–</button>
+              <input id="players-count" type="text" inputmode="numeric" value="2" readonly />
+              <button type="button" class="step-btn" data-step="1" aria-label="More players">+</button>
+            </div>
+          </div>
+
+          <!-- Word set -->
+          <div class="field">
+            <label for="wordset-select">Word set</label>
+            <select id="wordset-select"></select>
+          </div>
+
+          <!-- Difficulty -->
+          <div class="field">
+            <label>Difficulty</label>
+            <div class="segmented" id="difficulty-group">
+              <button type="button" class="seg" data-value="random">Random</button>
+              <button type="button" class="seg" data-value="fast">Fast</button>
+              <button type="button" class="seg active" data-value="medium">Medium</button>
+              <button type="button" class="seg" data-value="slow">Slow</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggest a title -->
+        <div class="field toggle-field">
+          <label for="title-toggle">Suggest a title</label>
+          <button type="button" id="title-toggle" class="toggle on" role="switch" aria-checked="true">
+            <span class="knob"></span>
+          </button>
+        </div>
+
+        <!-- Player names (rendered dynamically) -->
+        <div class="field">
+          <label>Player names</label>
+          <div id="player-names"></div>
+        </div>
+
+        <button type="submit" class="start-btn">Start</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================ GAME SCREEN ============================ -->
+  <section id="game-screen" class="screen">
+    <!-- Prompt reveal overlay -->
+    <div id="reveal" class="reveal hidden">
+      <div id="reveal-title" class="reveal-title"></div>
+      <div id="reveal-prompt" class="reveal-prompt"></div>
+      <div id="reveal-cue" class="reveal-cue"></div>
+    </div>
+
+    <!-- Speaking stage -->
+    <div id="stage" class="stage hidden">
+      <div id="active-name" class="active-name"></div>
+    </div>
+
+    <!-- Round-end reset icon -->
+    <div id="round-end" class="round-end hidden">
+      <svg viewBox="0 0 24 24" class="reset-icon" aria-hidden="true">
+        <path d="M12 5V2L7 7l5 5V8a6 6 0 1 1-6 6H4a8 8 0 1 0 8-9z" fill="currentColor"/>
+      </svg>
+    </div>
+
+    <!-- Corner reminders -->
+    <div id="prompt-reminder" class="prompt-reminder hidden"></div>
+    <div id="timer-display" class="timer-display hidden">0:00</div>
+
+    <!-- Control bar -->
+    <div class="control-bar">
+      <button type="button" id="btn-pause" class="ctrl" title="Pause / Resume (Space)">Pause</button>
+      <button type="button" id="btn-skip" class="ctrl" title="Skip prompt (→)">Skip</button>
+      <button type="button" id="btn-mute" class="ctrl" title="Mute / Unmute">🔊</button>
+      <button type="button" id="btn-end" class="ctrl" title="End game (Esc)">End</button>
+    </div>
+  </section>
+
+  <script src="prompts.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
