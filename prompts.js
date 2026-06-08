@@ -247,6 +247,98 @@
     "Tell the story of the best advice you ever received and from whom.",
   ];
 
+  /* ESL-friendly packs: short, common-word, idiom-light prompts so English
+     learners can actually speak. Labeled by vibe, not by level, to keep the
+     party feel. Both are also part of "Everything" (see assembly).
+       - Warm-up: easy, concrete, present-tense. Avoid idioms and slang.
+       - Spicy: edgy, adult (18+) party themes (dating, exes, nights out,
+         secrets, lies) but still simple English. Keep it cheeky, not explicit. */
+  const WARMUP_STARTERS = [
+    "What is your favorite food? Why do you like it?",
+    "Talk about your family.",
+    "What do you do every morning?",
+    "What is your favorite animal? Why?",
+    "Describe your best friend.",
+    "What is your favorite day of the week? Why?",
+    "What do you like to do on weekends?",
+    "What is your favorite season? Why?",
+    "Talk about your hometown.",
+    "What is your favorite color? Where do you see it?",
+    "What music do you like?",
+    "What is your favorite movie? Tell me about it.",
+    "What do you usually eat for breakfast?",
+    "What is your favorite place in your house? Why?",
+    "Describe your perfect day.",
+    "What sports do you like?",
+    "What is your favorite holiday? How do you celebrate it?",
+    "Talk about a person you like.",
+    "What is the weather like today? Do you like it?",
+    "What is your favorite drink?",
+    "What clothes do you like to wear?",
+    "What do you want to do this weekend?",
+    "Talk about your school or your job.",
+    "What is your favorite fruit? Why?",
+    "Do you have a pet? Talk about it. If not, talk about a pet you want.",
+    "What is your favorite room? Describe it.",
+    "What time do you wake up? What do you do first?",
+    "What is your favorite game? How do you play it?",
+    "Talk about a teacher you like.",
+    "What makes you happy?",
+    "What do you like to cook or eat?",
+    "Describe your bedroom.",
+    "What is your favorite app on your phone? Why?",
+    "What did you do yesterday?",
+    "Talk about a city you want to visit.",
+    "What is your favorite snack?",
+    "Who is your favorite singer? Why?",
+    "What do you do after school or work?",
+    "Talk about your favorite photo.",
+    "What is something you do well?",
+  ];
+
+  const SPICY_STARTERS = [
+    "What is the worst date you have ever had?",
+    "Tell us about your worst kiss.",
+    "What is your biggest red flag?",
+    "What is the most embarrassing thing you have done for love?",
+    "Would you read your partner's phone if you could? Why?",
+    "What is a lie you have told on a date?",
+    "Have you ever texted the wrong person? What happened?",
+    "What is the worst pick-up line you have heard or used?",
+    "Would you date someone your friends don't like? Why?",
+    "What is your biggest turn-off in a person?",
+    "What is the most awkward thing that happened on a first date?",
+    "Is it ever okay to cheat? Explain your answer.",
+    "Should exes stay friends? Why or why not?",
+    "Is jealousy normal, or is it a problem? Why?",
+    "Should couples share all their passwords? Why or why not?",
+    "Is money more important than love? Be honest.",
+    "What is the craziest thing you have done at a party?",
+    "What is your worst hangover story?",
+    "What is the most trouble you got into as a teenager?",
+    "What is the wildest thing on your bucket list?",
+    "What is the most money you have spent on one night out?",
+    "Tell us about a night you can't fully remember.",
+    "What is a secret you have never told your parents?",
+    "What is the biggest lie you have told to get out of work?",
+    "What is something you do that you would never admit in public?",
+    "What is the worst thing you have done and gotten away with?",
+    "Have you ever pretended to like a gift? Tell us about it.",
+    "What is the worst fashion choice you have ever made?",
+    "Have you ever lied about your age? Why?",
+    "Is marriage a good idea, or is it old-fashioned? Why?",
+    "What is one dating rule that everyone gets wrong?",
+    "Would you rather be single forever or in a bad relationship forever? Why?",
+    "Would you rather your ex or your boss read your texts? Why?",
+    "Would you rather know all your partner's secrets or keep all of yours? Why?",
+    "What is the worst gift you have ever received? Did you say anything?",
+    "Have you ever had a crush you were too scared to tell? What happened?",
+    "What is the most embarrassing thing your family knows about you?",
+    "What is a small lie you tell almost every day?",
+    "What is the riskiest thing you have ever done? Was it worth it?",
+    "If nobody would ever find out, what would you do?",
+  ];
+
   /* ----------------------- templated families ----------------------- */
   const TIME_YOU = [
     "got completely lost", "changed your mind about something big", "surprised yourself",
@@ -499,13 +591,22 @@
     cross("In one minute, sell me on {x}.", RATE_THINGS.slice(0, 30)),
   ));
 
+  const warmup = uniq(WARMUP_STARTERS);
+  const spicy = uniq(SPICY_STARTERS);
+
+  // "Everything" is the union of all packs, including the easy Warm-up pack and
+  // the adult (18+) Spicy pack.
   const everything = uniq(cat(
     everyday, personal, hotTakes, storytelling, wouldYouRather, hypothetical, workLife,
+    warmup, spicy,
   ));
 
-  /* The dropdown order; the first key is the default selection. */
+  /* The dropdown order; the first key is the default selection. The two
+     ESL-friendly packs sit near the top so teachers reach them quickly. */
   const PROMPT_SETS = {
     "Everything": everything,
+    "Warm-up": warmup,
+    "Spicy": spicy,
     "Everyday": everyday,
     "Personal": personal,
     "Hot Takes": hotTakes,
