@@ -418,7 +418,7 @@
     el.btnPause.textContent = "Pause";
 
     renderTimer();
-    state.activeIndex = 0;
+    state.activeIndex = Math.floor(Math.random() * state.config.players.length); // random opener each round
     renderActiveName(false); // first speaker — no swap chime
     scheduleNextSwap();
     startLoop();
